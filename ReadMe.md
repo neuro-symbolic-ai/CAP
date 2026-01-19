@@ -21,6 +21,8 @@ Create and activate the conda environment:
 conda env create -f environment.yml
 conda activate [environment-name]
 
+```
+## Usage
 
 ## Usage
 
@@ -37,7 +39,9 @@ python activation_grouping_main.py \
     --granularity token_to_words \
     --k 1 \
     --batch_size 16 \
-    --seed 42
+    --seed 42 \
+    --norm_preserve \
+    --broadcast_cap
 ```
 
 ### Key Arguments
@@ -48,9 +52,10 @@ python activation_grouping_main.py \
 - `--granularity`: Grouping granularity (`token_to_words`, `token_to_phrases`, `random`)
 - `--grouping_protocol`: Pooling method (`mean`, `sum`, `max`, `last_token`)
 - `--start_layer`: Layer from which to start applying grouping
-- `--norm_preserve`: Preserve activation norms after pooling
-- `--broadcast_cap`: Broadcast pooled values back to original positions
+- `--norm_preserve`: Preserve activation norms after pooling (optional)
+- `--broadcast_cap`: Broadcast pooled values back to original positions (optional)
 - `--k`: Number of top-k predictions to consider
+
 
 ## Project Structure
 
