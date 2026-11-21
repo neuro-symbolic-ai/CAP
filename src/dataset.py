@@ -220,6 +220,9 @@ class Dataset:
             self.word_idx = self._get_word_idx()
 
     def generate_prompt(self, item, masked=False):
+        item = item or {}
+        prompt = item.get("definition", "")
+        definiendum = item.get("word", "")
         if self.task_type == 'inverse_dictionary':
             if self.additional_prompt:
                 prompt = self.additional_prompt.format(item['definition'])
@@ -241,7 +244,6 @@ class Dataset:
         elif self.task_type == 'exact_sequence_autoencoding':
             prompt = self.additional_prompt.format(item['definition'])
             definiendum = item['definition']
-
         return prompt, definiendum
 
     def _compute_max_length(self, ratio=0.95, masked=True) -> int:
