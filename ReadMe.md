@@ -12,6 +12,7 @@ This project investigates how Large Language Models (LLMs) compose meaning acros
 ### Constituent-Aware Pooling (CAP)
 We introduce **Constituent-Aware Pooling (CAP)**, a methodology grounded in compositionality, mechanistic interpretability, and information theory that intervenes in model activations by pooling token representations into linguistic constituents at various layers. The approach consolidates token-level activations into higher-level syntactic units (e.g., words, phrases) using different pooling strategies (mean, sum, max, last-token).
 
+![Animation of Constituent-Aware Pooling](cap_method.gif)
 
 ## Installation
 
@@ -24,7 +25,6 @@ conda activate [environment-name]
 ```
 ## Usage
 
-## Usage
 
 The main script `activation_grouping_main.py` supports various experimental configurations:
 
