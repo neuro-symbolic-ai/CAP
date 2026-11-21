@@ -93,11 +93,24 @@ The code supports analyzing:
 If you use this code in your research, please cite:
 
 ```bibtex
-@inproceedings{aljaafari2025cap,
-  title={Where Do LLMs Compose Meaning? A Layerwise Analysis of Compositional Robustness},
-  author={Aljaafari, Nura and Carvalho, Danilo S and Freitas, Andr{\'e}},
-  booktitle={Proceedings of the 2026 Conference of the European Chapter of the Association for Computational Linguistics (EACL)},
-  year={2026}
+@inproceedings{aljaafari-etal-2026-llms,
+    title = "Where Do {LLM}s Compose Meaning? A Layerwise Analysis of Compositional Robustness",
+    author = "Aljaafari, Nura  and
+      Carvalho, Danilo  and
+      Freitas, Andre",
+    editor = "Demberg, Vera  and
+      Inui, Kentaro  and
+      Marquez, Llu{\'i}s",
+    booktitle = "Proceedings of the 19th Conference of the {E}uropean Chapter of the {A}ssociation for {C}omputational {L}inguistics (Volume 1: Long Papers)",
+    month = mar,
+    year = "2026",
+    address = "Rabat, Morocco",
+    publisher = "Association for Computational Linguistics",
+    url = "https://aclanthology.org/2026.eacl-long.214/",
+    doi = "10.18653/v1/2026.eacl-long.214",
+    pages = "4622--4646",
+    ISBN = "979-8-89176-380-7",
+    abstract = "Understanding how large language models (LLMs) process compositional linguistic structures is integral to enhancing their reliability and interpretability. We present Constituent-Aware Pooling (CAP), a methodology grounded in compositionality, mechanistic interpretability, and information theory that intervenes in model activations by pooling token representations into linguistic constituents at various layers. Experiments across eight models (124M-8B parameters) on inverse definition modelling, hypernym and synonym prediction reveal that semantic composition is not localised to specific layers but distributed across network depth. Performance degrades substantially under constituent-based pooling, particularly in early and middle layers, with larger models showing greater sensitivity. We propose an information-theoretic interpretation: transformers' training objectives incentivise deferred integration to maximise token-level throughput, resulting in fragmented rather than localised composition. These findings highlight fundamental architectural and training constraints requiring specialised approaches to encourage robust compositional processing."
 }
 ```
 
