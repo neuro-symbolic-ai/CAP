@@ -1,89 +1,95 @@
+"""Extract CAP's WordNet records with synset IDs.
+"""
+
 import json
-import os
+from pathlib import Path
 
 import nltk
 from nltk.corpus import wordnet as wn
 
 
 def download_wordnet():
+    '''Download the WordNet corpus.'''
     try:
-        nltk.data.find('corpora/wordnet')
+        wn.synsets("pen")
     except LookupError:
-        print("WordNet not found. Downloading...")
-        nltk.download('wordnet')
-
-
-def extract_word_data(synset):
-    word = synset.name().split('.')[0]
-    synonyms = []
-    for lemma in synset.lemmas():
-        if lemma.name() != word:
-            synonyms.append({
-                'word': lemma.name().replace('_', ' '),
-                'wordnet_id': f"{lemma.name()}.{synset.pos()}.{synset.name().split('.')[-1]}"
-            })
-    return {
-        'word': word,
-        'wordnet_id': synset.name(),
-        'synonyms': synonyms
-    }
+        if not nltk.download("wordnet", quiet=True):
+            raise RuntimeError("Could not download the NLTK WordNet corpus")
+        wn.synsets("pen")
 
 
 def extract_synonyms(synset):
-    base_word = synset.name().split('.')[0]
-    synonyms = [
-        {
-            'word': lemma.name().replace('_', ' '),
-            'wordnet_id': f"{lemma.name()}.{synset.pos()}.{synset.name().split('.')[-1]}"
-        }
-        for lemma in synset.lemmas()
-        if lemma.name() != base_word
-    ]
+    '''Extract CAP's WordNet synsets.
+    args: synset
+    return: synsets'''
+    base_word = synset.name().split(".")[0]
     return {
-        'word': base_word,
-        'wordnet_id': synset.name(),
-        'synonyms': synonyms
+        "word": base_word,
+        "wordnet_id": synset.name(),
+        "synonyms": [
+            {
+                "word": lemma.name().replace("_", " "),
+                # All lemmas in this record belong to the same synset.
+                "wordnet_id": synset.name(),
+            }
+            for lemma in synset.lemmas()
+            if lemma.name() != base_word
+        ],
     }
 
 
 def extract_hypernyms(synset):
-    word = synset.name().split('.')[0]
-    hypernyms = []
-
-    for hypernym in synset.hypernyms():
-        hypernyms.append({
-            'word': hypernym.name().split('.')[0],
-            'wordnet_id': hypernym.name()
-        })
     return {
-        'word': word,
-        'wordnet_id': synset.name(),
-        'hypernyms': hypernyms
+        "word": synset.name().split(".")[0],
+        "wordnet_id": synset.name(),
+        "hypernyms": [
+            {
+                "word": hypernym.name().split(".")[0],
+                "wordnet_id": hypernym.name(),
+            }
+            for hypernym in synset.hypernyms()
+        ],
     }
 
+def same_word(left, right):
+    """Compare displayed words after normalising WordNet underscores and case."""
+    def normalise(value):
+        return " ".join(value.replace("_", " ").split()).casefold()
 
-def main(path, extra_filter=None):
+    return normalise(left) == normalise(right)
+
+def main(path="data/", extra_filter=None):
     download_wordnet()
+    output_dir = Path(path)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
     data_synonyms = []
     data_hypernyms = []
+    for synset in wn.all_synsets():
+        synonym_record = extract_synonyms(synset)
+        if extra_filter:
+            synonym_record["synonyms"] = [
+                item for item in synonym_record["synonyms"]
+                if not same_word(synonym_record["word"], item["word"])
+            ]
+        if synonym_record["synonyms"]:
+            data_synonyms.append(synonym_record)
 
-    for synset in list(wn.all_synsets())[:]:
-        word_data = extract_synonyms(synset)
-        if word_data['synonyms']:  # Only add if there are synonyms
-            data_synonyms.append(word_data)
-        hypernym_data = extract_hypernyms(synset)
-        if hypernym_data['hypernyms']:
-            data_hypernyms.append(hypernym_data)
+        hypernym_record = extract_hypernyms(synset)
+        if extra_filter:
+            hypernym_record["hypernyms"] = [
+                item for item in hypernym_record["hypernyms"]
+                if not same_word(hypernym_record["word"], item["word"])
+            ]
+        if hypernym_record["hypernyms"]:
+            data_hypernyms.append(hypernym_record)
 
-    if extra_filter:
-        pass
+    for filename, records in (
+        ("wordnet_data_synonyms.json", data_synonyms),
+        ("wordnet_data_hypernyms.json", data_hypernyms),
+    ):
+        with (output_dir / filename).open("w", encoding="utf-8") as stream:
+            json.dump(records, stream, indent=2, ensure_ascii=False)
 
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    with open(path + 'wordnet_data_synonyms.json', 'w', encoding='utf-8') as f:
-        json.dump(data_synonyms, f, indent=2, ensure_ascii=False)
-    with open(path + 'wordnet_data_hypernyms.json', 'w', encoding='utf-8') as f:
-        json.dump(data_hypernyms, f, indent=2, ensure_ascii=False)
-
-
-if __name__ == '__main__':
-    main(path='data/')
+if __name__ == "__main__":
+    main()

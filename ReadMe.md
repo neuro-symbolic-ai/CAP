@@ -10,75 +10,82 @@ This repository contains the code for the paper "Where Do LLMs Compose Meaning? 
 This project investigates how Large Language Models (LLMs) compose meaning across different layers by analysing their robustness to activation grouping at various granularities.
 
 ### Constituent-Aware Pooling (CAP)
-We introduce **Constituent-Aware Pooling (CAP)**, a methodology grounded in compositionality, mechanistic interpretability, and information theory that intervenes in model activations by pooling token representations into linguistic constituents at various layers. The approach consolidates token-level activations into higher-level syntactic units (e.g., words, phrases) using different pooling strategies (mean, sum, max, last-token).
+We introduce **Constituent-Aware Pooling (CAP)**, an intervention that pools token representations into linguistic constituents, such as words or phrases, at selected model layers. CAP combines token-level activations using mean, sum, max, or last-token pooling.
 
 ![Animation of Constituent-Aware Pooling](cap_method.gif)
 
-## Installation
+## Setup
 
-Create and activate the conda environment:
+Use the provided `environment.yml` with Python 3.11. From the repository root:
 
 ```bash
 conda env create -f environment.yml
 conda activate LLMs_grouping
-
+python -m spacy download en_core_web_sm
+python -c "import benepar; benepar.download('benepar_en3')"
 ```
+
+The final two commands install the English parsing models used by `src/nlp_setup.py`. Model weights are downloaded on first use; the required downloads and memory depend on the model selected for an experiment.
+
 ## Usage
 
 
 The main script `activation_grouping_main.py` supports various experimental configurations:
 
-```bash
-python activation_grouping_main.py \
-    --model_name GPT2 \
-    --task_type inverse_dictionary \
-    --supervision_type original \
-    --data_path path/to/data.json \
-    --start_layer 4 \
-    --grouping_protocol mean \
-    --granularity token_to_words \
-    --k 1 \
-    --batch_size 16 \
-    --seed 42 \
-    --norm_preserve \
-    --broadcast_cap
-```
+The model and data preparation settings must match. To evaluate another layer, change `--start_layer` and run the command again. For phrase-level pooling, use `--granularity token_to_phrases`; `random` provides a grouping control.
 
-### Key Arguments
+| Argument | Purpose |
+| --- | --- |
+| `--model_name` | Model to evaluate; `GPT2` is the default. |
+| `--task_type` | `inverse_dictionary`, `synonyms`, `hypernyms`, `input_reconstruction`, or `exact_sequence_autoencoding`. |
+| `--supervision_type` | `original` or `fine-tuned`. Fine-tuned runs also require `--model_path`. |
+| `--data_path` | Path to the processed JSON from `src/model_testing.py`. |
+| `--start_layer` | Layer at which the intervention begins. |
+| `--granularity` | `token_to_words`, `token_to_phrases`, or `random`. |
+| `--grouping_protocol` | `mean`, `sum`, `max`, or `last_token`. |
+| `--component` | Optional activation component or hook name; omit it for the default component selection. |
+| `--k` | Number of top predictions used for the task metric. |
 
-- `--model_name`: Model to evaluate (e.g., GPT2, gemma-2b)
-- `--task_type`: Evaluation task (`inverse_dictionary`, `synonyms`, `hypernyms`, `input_reconstruction`, `exact_sequence_autoencoding`)
-- `--supervision_type`: Use `original` or `fine-tuned` model
-- `--granularity`: Grouping granularity (`token_to_words`, `token_to_phrases`, `random`)
-- `--grouping_protocol`: Pooling method (`mean`, `sum`, `max`, `last_token`)
-- `--start_layer`: Layer from which to start applying grouping
-- `--norm_preserve`: Preserve activation norms after pooling (optional)
-- `--broadcast_cap`: Broadcast pooled values back to original positions (optional)
-- `--k`: Number of top-k predictions to consider
+### Control variants
 
+Add `--norm_preserve` to preserve activation norms after pooling. Add `--broadcast_cap` to broadcast each pooled value back to its original token positions and preserve sequence length. Run these controls separately from the sequence-compressing CAP configuration above so their outputs are easy to compare.
 
-## Project Structure
+## Outputs
 
-```
-.
-├── activation_grouping_main.py    # Main evaluation script
-├── src/
-│   ├── metrics.py                 # Metric calculation utilities
-│   └── utils.py                   # Helper functions
-└── results/                       # Output logs and metrics
-```
+The script writes a text log under `results/{model_name}/{task_type}/` and a JSON file under one of these folders:
 
-## Output
+| Granularity | JSON folder |
+| --- | --- |
+| `token_to_words` | `tw_logs/` |
+| `token_to_phrases` | `tp_logs/` |
+| `random` | `ran_logs/` |
+
+The JSON contains per-batch clean and grouped metrics, grouped predictions, labels, sequence lengths, compression ratios, layer and pooling settings, followed by a summary record. Filenames include the model, task, seed, pooling rule, and start layer.
 
 Results are saved in two formats:
 - **Log files**: Detailed execution logs in `results/{model_name}/{task_type}/`
 - **JSON files**: Structured metrics and predictions in `results/{model_name}/{task_type}/{granularity}_logs/`
 
-Each result includes:
-- Clean model predictions (no intervention)
-- Grouped predictions (with activation pooling)
-- Metrics comparing both conditions
-- Compression ratios and layer information
+## Repository layout
+
+```text
+.
+├── ReadMe.md
+├── environment.yml
+├── activation_grouping_main.py     # CAP intervention and evaluation
+├── cap_method.gif              # Method animation
+├── src/
+│   ├── dataset.py                  # Task prompts and tokenisation
+│   ├── exract_definitions.py       # WordNet definition preparation
+│   ├── extract_synonyms_hypernyms.py
+│   ├── model_testing.py            # Clean-run filtering
+│   ├── model_finetuning.py
+│   ├── metrics.py
+│   ├── nlp_setup.py
+│   └── utils.py
+├── data/                            # Generated locally
+└── results/                         # Generated locally
+```
 
 ## Experiments
 
