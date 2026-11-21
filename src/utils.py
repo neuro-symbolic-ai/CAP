@@ -86,6 +86,32 @@ tokenized_first_word = {'GPT2': False, 'GPT2-medium': False, 'GPT2-large': False
                         'Qwen_Qwen2_5_1_5B': False}  # unless there is a space before it then this stands
 
 
+def get_delimiter(model_name: str) -> str:
+    """Get the delimiter used by a model tokenizer, falling back for unknown models."""
+    canonical_name = set_model_name(model_name)
+
+    for name in (model_name, canonical_name):
+        if name in delimiter_tokenisers:
+            return delimiter_tokenisers[name]
+
+    lower_name = canonical_name.lower()
+    if any(name in lower_name for name in ('gemma', 'llama_2', 'llama-2', 'mistral', 't5')):
+        return '▁'
+    return 'Ġ'
+
+
+def get_tokenized_first_word(model_name: str) -> bool:
+    """Return whether a model already tokenizes the first word separately."""
+    canonical_name = set_model_name(model_name)
+
+    for name in (model_name, canonical_name):
+        if name in tokenized_first_word:
+            return tokenized_first_word[name]
+
+    lower_name = canonical_name.lower()
+    return 't5' in lower_name
+
+
 # nlp = spacy.load("en_core_web_sm")
 # nlp.add_pipe("benepar", config={"model": "benepar_en3"}, last=True)
 
@@ -316,7 +342,7 @@ def create_parts_ranges(tokenised_sentence, end_before_padding, max_length, gran
         current_word = ''
         current_word_start = 0
         current_word_end = 0
-        delimiter = delimiter_tokenisers[model_name]
+        delimiter = get_delimiter(model_name)
         flag_first_word = True
         i = 0
         while i < end_before_padding:
